@@ -1,0 +1,19 @@
+*.json.local
+.env
+azure.env
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+venv/
+.venv/
+
+# PowerShell
+*.ps1.bak
+
+# Reports (generated output)
+validate/reports/
+
+# VS Code
+.vscode/
