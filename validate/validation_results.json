@@ -1,0 +1,138 @@
+[
+  {
+    "resource": "rg-network-dev",
+    "check": "location",
+    "status": "PASS",
+    "expected": "canadacentral",
+    "actual": "canadacentral",
+    "message": null
+  },
+  {
+    "resource": "vnet-main-dev",
+    "check": "address_space",
+    "status": "PASS",
+    "expected": "10.0.0.0/16",
+    "actual": "10.0.0.0/16",
+    "message": null
+  },
+  {
+    "resource": "snet-frontend",
+    "check": "address_prefix",
+    "status": "PASS",
+    "expected": "10.0.1.0/24",
+    "actual": "10.0.1.0/24",
+    "message": null
+  },
+  {
+    "resource": "snet-frontend",
+    "check": "nsg_association",
+    "status": "PASS",
+    "expected": "nsg-frontend-dev",
+    "actual": "nsg-frontend-dev",
+    "message": null
+  },
+  {
+    "resource": "snet-backend",
+    "check": "address_prefix",
+    "status": "PASS",
+    "expected": "10.0.2.0/24",
+    "actual": "10.0.2.0/24",
+    "message": null
+  },
+  {
+    "resource": "snet-backend",
+    "check": "nsg_association",
+    "status": "PASS",
+    "expected": "nsg-backend-dev",
+    "actual": "nsg-backend-dev",
+    "message": null
+  },
+  {
+    "resource": "snet-backend",
+    "check": "route_table_association",
+    "status": "PASS",
+    "expected": "rt-custom-dev",
+    "actual": "rt-custom-dev",
+    "message": null
+  },
+  {
+    "resource": "nsg-frontend-dev/Allow-HTTP",
+    "check": "priority",
+    "status": "PASS",
+    "expected": "100",
+    "actual": "100",
+    "message": null
+  },
+  {
+    "resource": "nsg-frontend-dev/Allow-HTTP",
+    "check": "destination_port",
+    "status": "PASS",
+    "expected": "80",
+    "actual": "80",
+    "message": null
+  },
+  {
+    "resource": "nsg-frontend-dev/Allow-HTTPS",
+    "check": "priority",
+    "status": "PASS",
+    "expected": "110",
+    "actual": "110",
+    "message": null
+  },
+  {
+    "resource": "nsg-frontend-dev/Allow-HTTPS",
+    "check": "destination_port",
+    "status": "PASS",
+    "expected": "443",
+    "actual": "443",
+    "message": null
+  },
+  {
+    "resource": "nsg-backend-dev/Allow-From-Frontend",
+    "check": "priority",
+    "status": "PASS",
+    "expected": "100",
+    "actual": "100",
+    "message": null
+  },
+  {
+    "resource": "nsg-backend-dev/Allow-From-Frontend",
+    "check": "destination_port",
+    "status": "PASS",
+    "expected": "*",
+    "actual": "*",
+    "message": null
+  },
+  {
+    "resource": "nsg-backend-dev/Allow-SignalR",
+    "check": "priority",
+    "status": "PASS",
+    "expected": "110",
+    "actual": "110",
+    "message": null
+  },
+  {
+    "resource": "nsg-backend-dev/Allow-SignalR",
+    "check": "destination_port",
+    "status": "PASS",
+    "expected": "5000",
+    "actual": "5000",
+    "message": null
+  },
+  {
+    "resource": "rt-custom-dev/route-default-internet",
+    "check": "address_prefix",
+    "status": "PASS",
+    "expected": "0.0.0.0/0",
+    "actual": "0.0.0.0/0",
+    "message": null
+  },
+  {
+    "resource": "rt-custom-dev/route-default-internet",
+    "check": "next_hop_type",
+    "status": "PASS",
+    "expected": "Internet",
+    "actual": "Internet",
+    "message": null
+  }
+]

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Network Validation Report</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #1e1e2e;
+            color: #cdd6f4;
+            margin: 0;
+            padding: 32px;
+        }
+        h1 {
+            color: #cba6f7;
+            margin-bottom: 4px;
+        }
+        .subtitle {
+            color: #6c7086;
+            font-size: 0.9rem;
+            margin-bottom: 32px;
+        }
+        .summary {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .summary-card {
+            background: #2a2b3d;
+            border-radius: 10px;
+            padding: 20px 32px;
+            text-align: center;
+            min-width: 120px;
+        }
+        .summary-card .count {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .summary-card .label {
+            font-size: 0.85rem;
+            color: #6c7086;
+            margin-top: 4px;
+        }
+        .overall {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 24px;
+            color: #2ecc71;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #2a2b3d;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        th {
+            background: #313244;
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 0.85rem;
+            color: #cba6f7;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        td {
+            padding: 12px 16px;
+            border-top: 1px solid #313244;
+            font-size: 0.9rem;
+        }
+        tr:hover td {
+            background: #313244;
+        }
+        .footer {
+            margin-top: 24px;
+            font-size: 0.8rem;
+            color: #6c7086;
+        }
+    </style>
+</head>
+<body>
+    <h1>Azure Network Validation Report</h1>
+    <div class="subtitle">Generated at: 2026-04-07 13:55:42</div>
+
+    <div class="overall">Overall Status: ALL PASS</div>
+
+    <div class="summary">
+        <div class="summary-card">
+            <div class="count">17</div>
+            <div class="label">Total Checks</div>
+        </div>
+        <div class="summary-card">
+            <div class="count" style="color: #2ecc71;">17</div>
+            <div class="label">PASS</div>
+        </div>
+        <div class="summary-card">
+            <div class="count" style="color: #e74c3c;">0</div>
+            <div class="label">FAIL</div>
+        </div>
+        <div class="summary-card">
+            <div class="count" style="color: #f39c12;">0</div>
+            <div class="label">DRIFT</div>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Resource</th>
+                <th>Check</th>
+                <th>Status</th>
+                <th>Expected</th>
+                <th>Actual</th>
+                <th>Message</th>
+            </tr>
+        </thead>
+        <tbody>
+            
+        <tr>
+            <td>rg-network-dev</td>
+            <td>location</td>
+            <td style="color: #2ecc71; font-weight: bold;">PASS</td>
+            <td>canadacentral</td>
+            <td>canadacentral</td>
+            <td>—</td>
+        </tr>
+        <tr>
+            <td>vnet-main-dev</td>
+            <td>address_space</td>
+            <td style="color: #2ecc71; font-weight: bold;">PASS</td>
+            <td>10.0.0.0/16</td>
+            <td>10.0.0.0/16</td>
+            <td>—</td>
+        </tr>
+        <tr>
+            <td>snet-frontend</td>
+            <td>address_prefix</td>
+            <td style="color: #2ecc71; font-weight: bold;">PASS</td>
+            <td>10.0.1.0/24</td>
+            <td>10.0.1.0/24</td>
+            <td>—</td>
+        </tr>
+        <tr>
+            <td>snet-frontend</td>
+            <td>nsg_association</td>
+            <td style="color: #2ecc71; font-weight: bold;">PASS</td>
+            <td>nsg-frontend-dev</td>
+            <td>nsg-frontend-dev</td>
+            <td>—</td>
+        </tr>
+        <tr>
+            <td>snet-backend</td>
+            <td>address_prefix</td>
+            <td style="color: #2ecc71; font-weight: bold;">PASS</td>
+            <td>10.0.2.0/24</td>
+            <td>10.0.2.0/24</td>
+            <td>—</td>
+        </tr>
+        <tr>
+            <td>snet-backend</td>
+            <td>nsg_association</td>
+            <td style="color: #2ecc71; font-weight: bold;">PASS</td>
+            <td>nsg-backend-dev</td>
+            <td>nsg-backend-dev</td>
+            <td>—</td>
+        </tr>
+        <tr>
+            <td>snet-backend</td>
+            <td>route_table_association</td>
+            <td style="color: #2ecc71; font-weight: bold;">PASS</td>
+            <td>rt-custom-dev</td>
+            <td>rt-custom-dev</td>
+            <td>—</td>
+        </tr>
+        <tr>
+            <td>nsg-frontend-dev/Allow-HTTP</td>
+            <td>priority</td>
+            <td style="color: #2ecc71; font-weight: bold;">PASS</td>
+            <td>100</td>
+            <td>100</td>
+            <td>—</td>
+        </tr>
+        <tr>
+            <td>nsg-frontend-dev/Allow-HTTP</td>
+            <td>destination_port</td>
+            <td style="color: #2ecc71; font-weight: bold;">PASS</td>
+            <td>80</td>
+            <td>80</td>
+            <td>—</td>
+        </tr>
+        <tr>
+            <td>nsg-frontend-dev/Allow-HTTPS</td>
+            <td>priority</td>
+            <td style="color: #2ecc71; font-weight: bold;">PASS</td>
+            <td>110</td>
+            <td>110</td>
+            <td>—</td>
+        </tr>
+        <tr>
+            <td>nsg-frontend-dev/Allow-HTTPS</td>
+            <td>destination_port</td>
+            <td style="color: #2ecc71; font-weight: bold;">PASS</td>
+            <td>443</td>
+            <td>443</td>
+            <td>—</td>
+        </tr>
+        <tr>
+            <td>nsg-backend-dev/Allow-From-Frontend</td>
+            <td>priority</td>
+            <td style="color: #2ecc71; font-weight: bold;">PASS</td>
+            <td>100</td>
+            <td>100</td>
+            <td>—</td>
+        </tr>
+        <tr>
+            <td>nsg-backend-dev/Allow-From-Frontend</td>
+            <td>destination_port</td>
+            <td style="color: #2ecc71; font-weight: bold;">PASS</td>
+            <td>*</td>
+            <td>*</td>
+            <td>—</td>
+        </tr>
+        <tr>
+            <td>nsg-backend-dev/Allow-SignalR</td>
+            <td>priority</td>
+            <td style="color: #2ecc71; font-weight: bold;">PASS</td>
+            <td>110</td>
+            <td>110</td>
+            <td>—</td>
+        </tr>
+        <tr>
+            <td>nsg-backend-dev/Allow-SignalR</td>
+            <td>destination_port</td>
+            <td style="color: #2ecc71; font-weight: bold;">PASS</td>
+            <td>5000</td>
+            <td>5000</td>
+            <td>—</td>
+        </tr>
+        <tr>
+            <td>rt-custom-dev/route-default-internet</td>
+            <td>address_prefix</td>
+            <td style="color: #2ecc71; font-weight: bold;">PASS</td>
+            <td>0.0.0.0/0</td>
+            <td>0.0.0.0/0</td>
+            <td>—</td>
+        </tr>
+        <tr>
+            <td>rt-custom-dev/route-default-internet</td>
+            <td>next_hop_type</td>
+            <td style="color: #2ecc71; font-weight: bold;">PASS</td>
+            <td>Internet</td>
+            <td>Internet</td>
+            <td>—</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div class="footer">
+        Azure Network Provisioner &amp; Validator — Portfolio Project
+    </div>
+</body>
+</html>

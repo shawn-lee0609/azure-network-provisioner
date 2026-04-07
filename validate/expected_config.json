@@ -1,0 +1,78 @@
+{
+  "environment": "dev",
+  "resource_group": "rg-network-dev",
+  "location": "canadacentral",
+  "virtual_network": {
+    "name": "vnet-main-dev",
+    "address_space": "10.0.0.0/16",
+    "subnets": [
+      {
+        "name": "snet-frontend",
+        "address_prefix": "10.0.1.0/24",
+        "nsg": "nsg-frontend-dev"
+      },
+      {
+        "name": "snet-backend",
+        "address_prefix": "10.0.2.0/24",
+        "nsg": "nsg-backend-dev",
+        "route_table": "rt-custom-dev"
+      }
+    ]
+  },
+  "network_security_groups": [
+    {
+      "name": "nsg-frontend-dev",
+      "rules": [
+        {
+          "name": "Allow-HTTP",
+          "priority": 100,
+          "direction": "Inbound",
+          "access": "Allow",
+          "protocol": "Tcp",
+          "destination_port": "80"
+        },
+        {
+          "name": "Allow-HTTPS",
+          "priority": 110,
+          "direction": "Inbound",
+          "access": "Allow",
+          "protocol": "Tcp",
+          "destination_port": "443"
+        }
+      ]
+    },
+    {
+      "name": "nsg-backend-dev",
+      "rules": [
+        {
+          "name": "Allow-From-Frontend",
+          "priority": 100,
+          "direction": "Inbound",
+          "access": "Allow",
+          "protocol": "Tcp",
+          "destination_port": "*"
+        },
+        {
+          "name": "Allow-SignalR",
+          "priority": 110,
+          "direction": "Inbound",
+          "access": "Allow",
+          "protocol": "Tcp",
+          "destination_port": "5000"
+        }
+      ]
+    }
+  ],
+  "route_tables": [
+    {
+      "name": "rt-custom-dev",
+      "routes": [
+        {
+          "name": "route-default-internet",
+          "address_prefix": "0.0.0.0/0",
+          "next_hop_type": "Internet"
+        }
+      ]
+    }
+  ]
+}
