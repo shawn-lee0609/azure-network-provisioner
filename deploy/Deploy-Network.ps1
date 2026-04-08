@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Deploys an Azure Virtual Network and Subnets automatically.
 

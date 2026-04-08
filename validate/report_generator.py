@@ -9,6 +9,7 @@ the validation status of each Azure resource.
 import json
 import os
 from datetime import datetime
+from validate.validator import build_summary
 
 
 # ─────────────────────────────────────────────
@@ -49,22 +50,7 @@ def get_status_color(status: str) -> str:
     return colors.get(status, "#95a5a6")  # grey for unknown
 
 
-def build_summary(results: list[dict]) -> dict:
-    """
-    Calculates total, pass, fail, and drift counts
-    from the full results list.
-    """
-    return {
-        "total": len(results),
-        "pass":  sum(1 for r in results if r["status"] == "PASS"),
-        "fail":  sum(1 for r in results if r["status"] == "FAIL"),
-        "drift": sum(1 for r in results if r["status"] == "DRIFT")
-    }
-
-
-# ─────────────────────────────────────────────
 # HTML Generation
-# ─────────────────────────────────────────────
 
 def generate_html(results: list[dict], summary: dict) -> str:
     """

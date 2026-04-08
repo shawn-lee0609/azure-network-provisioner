@@ -1,4 +1,4 @@
-"""
+﻿"""
 validator.py
 
 Connects to Azure using environment-based credentials,
@@ -10,7 +10,7 @@ flagging any configuration drift detected.
 """
 
 import json
-import os  
+import os
 import sys
 from dataclasses import dataclass
 from typing import Optional
@@ -74,7 +74,7 @@ def validate_resource_group(resource_client: ResourceManagementClient,
     Checks that the Resource Group exists and is in the correct location.
     """
     results = []
-    rg_name = config["resource_group"] # Extracts the value by using the key "resource_group" from .json
+    rg_name = config["resource_group"] # Extracts the value from expected_config.json by using the key "resource_group" from .json
     expected_location = config["location"]
 
     try:
@@ -91,7 +91,7 @@ def validate_resource_group(resource_client: ResourceManagementClient,
                 actual=actual_location
             ))
         else:
-            reults.append(ValidationResult(
+            results.append(ValidationResult(
                 resource=rg.name,
                 check="location",
                 status="DRIFT",
@@ -99,7 +99,7 @@ def validate_resource_group(resource_client: ResourceManagementClient,
                 actual=actual_location,
                 message=f"Location mismatch: expected '{expected_location}', got '{actual_location}'"
             ))
-    
+
     except Exception:
         # Resource Group does not exist at all
         results.append(ValidationResult(
@@ -421,6 +421,18 @@ def validate_route_tables(network_client: NetworkManagementClient,
 
     return results
 
+def build_summary(results: list[dict]) -> dict:
+    """
+    Calculates total, pass, fail, and drift counts
+    from the full results list.
+    """
+    return {
+        "total": len(results),
+        "pass":  sum(1 for r in results if r["status"] == "PASS"),
+        "fail":  sum(1 for r in results if r["status"] == "FAIL"),
+        "drift": sum(1 for r in results if r["status"] == "DRIFT")
+    }
+
 # Main Entry Point
 
 def main():
@@ -492,4 +504,3 @@ def main():
 if __name__ == "__main__":
     main()
 
-                            
