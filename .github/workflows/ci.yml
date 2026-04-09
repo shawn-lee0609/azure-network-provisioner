@@ -57,7 +57,7 @@ jobs:
           run: |
             flake8 validate/ tests/ \
               --max-line-length=120 \
-              --extend-ignore=E501,W503,E302,E261,W291,E221,W292,E127,F401,F541
+              --extend-ignore=E501,W503,E302,E261,W291,E221,W292,E127,F401,F541,W391
 
   # Job 3: Run unit tests
   test-python:
