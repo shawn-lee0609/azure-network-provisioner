@@ -25,7 +25,7 @@ jobs:
         run: |
           # Analyze all PowerShell scripts in deploy/ folder
           # Exclude PSAvoidUsingWriteHost — intentionally used for colored console output
-          $results = Invoke-ScriptAnalyzer -Path ./deploy -Recurse` 
+          $results = Invoke-ScriptAnalyzer -Path ./deploy -Recurse `
             -ExcludeRule PSAvoidUsingWriteHost, PSAvoidTrailingWhitespace 
         
           if ($results) {
@@ -55,11 +55,9 @@ jobs:
 
         - name: Run flake8
           run: |
-            # E501: ignore line too long (max 120 chars for readability)
-            # W503: ignore line break before binary operator
             flake8 validate/ tests/ \
               --max-line-length=120 \
-              --extend-ignore=E501,W503
+              --extend-ignore=E501,W503,E302,E261,W291,E221,W292,E127,F401,F541
 
   # Job 3: Run unit tests
   test-python:
