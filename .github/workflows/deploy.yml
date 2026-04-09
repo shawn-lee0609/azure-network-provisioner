@@ -1,0 +1,83 @@
+name: Deploy Pipeline
+
+on:
+  # workflow_dispatch: -> Manual trigger only - prevents accidental deployments on every push
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment (dev / staging / prod)"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+jobs:
+  # Job 1: Deploy Azure Network Infrastructure
+  deploy-infrastructure:
+    name: Deploy Network Infrastructure
+    runs-on: windows-latest
+
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Login to Azure
+      uses: azure/login@v2 
+      with: 
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        # AZURE_CREDENTIALS is a GitHub Secret containing Service Principal JSON
+        # Format: {"clientId":"...","clientSecret":"...","tenantId":"...","subscriptionId":"..."}
+
+    - name: Install Az PowerShell module
+      shell: pwsh
+      run: Install-Module -Name Az -Scope CurrentUser -Force -AllowClobber
+
+    - name: Run Deploy-All.ps1
+      shell: pwsh
+      run: |
+        .\deploy\Deploy-All.ps1 -Environment ${{ github.event.inputs.environment }}
+
+  # Job 2: Validate Deployed Infrastructure
+  validate-infrastructure:
+    name: Validate Infrastructure
+    # Since validation uses only Python, better to use ubuntu (Faster and lighter)
+    runs-on: ubuntu-latest
+    # Only run validation after deployment succeeds
+    needs: deploy-infrastructure
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with: 
+          python-version: "3.11"
+      
+      - name: Install dependencies
+        run: pip install -r validate/requirements.txt
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Run validator
+        env:
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          # Inject subscription ID from GitHub Secrets as environment variable
+          # validator.py reads this via os.environ.get("AZURE_SUBSCRIPTION_ID")
+        run: python validate/validator.py
+
+      - name: Generate HTML report
+        run: python validate/report_generator.py
+
+      - name: Upload validation report
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-report
+          path: validate/report.html
+          # Saves report.html as a downloadable artifact in GitHub Actions
