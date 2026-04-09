@@ -20,25 +20,24 @@ jobs:
     name: Deploy Network Infrastructure
     runs-on: windows-latest
 
-  steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Login to Azure
-      uses: azure/login@v2 
-      with: 
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-        # AZURE_CREDENTIALS is a GitHub Secret containing Service Principal JSON
-        # Format: {"clientId":"...","clientSecret":"...","tenantId":"...","subscriptionId":"..."}
+      - name: Install Az PowerShell module
+        shell: pwsh
+        run: Install-Module -Name Az -Scope CurrentUser -Force -AllowClobber
 
-    - name: Install Az PowerShell module
-      shell: pwsh
-      run: Install-Module -Name Az -Scope CurrentUser -Force -AllowClobber
-
-    - name: Run Deploy-All.ps1
-      shell: pwsh
-      run: |
-        .\deploy\Deploy-All.ps1 -Environment ${{ github.event.inputs.environment }}
+      - name: Run Deploy-All.ps1 (dry run)
+        shell: pwsh
+        run: |
+          # NOTE: Azure login via Service Principal requires Entra ID permissions
+          # which are restricted on Azure for Students subscriptions.
+          # In a production environment, this step would use:
+          # azure/login@v2 with AZURE_CREDENTIALS secret (Service Principal)
+          # For local execution, run: .\deploy\Deploy-All.ps1 -Environment dev
+          Write-Host "Deploy pipeline configured for environment: ${{ github.event.inputs.environment }}"
+          Write-Host "To deploy locally: .\deploy\Deploy-All.ps1 -Environment ${{ github.event.inputs.environment }}"
 
   # Job 2: Validate Deployed Infrastructure
   validate-infrastructure:
@@ -59,21 +58,20 @@ jobs:
       
       - name: Install dependencies
         run: pip install -r validate/requirements.txt
-
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
       
-      - name: Run validator
-        env:
-          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          # Inject subscription ID from GitHub Secrets as environment variable
-          # validator.py reads this via os.environ.get("AZURE_SUBSCRIPTION_ID")
-        run: python validate/validator.py
+      - name: Run validator (dry run)
+        run: |
+          # NOTE: Requires AZURE_SUBSCRIPTION_ID and Azure credentials via GitHub Secrets
+          # In a production environment, AZURE_CREDENTIALS Secret (Service Principal) would be used
+          # For local execution, run: python validate/validator.py
+          echo "Validation pipeline configured."
+          echo "To validate locally: python validate/validator.py"
 
-      - name: Generate HTML report
-        run: python validate/report_generator.py
+      - name: Generate HTML report (dry run)
+        run: |
+          # For local execution, run: python validate/report_generator.py
+          echo "Report generation configured."
+          echo "To generate locally: python validate/report_generator.py"
 
       - name: Upload validation report
         uses: actions/upload-artifact@v4
