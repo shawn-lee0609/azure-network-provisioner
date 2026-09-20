@@ -17,3 +17,9 @@ validate/reports/
 
 # VS Code
 .vscode/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
