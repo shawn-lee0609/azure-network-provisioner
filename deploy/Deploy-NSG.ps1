@@ -181,6 +181,9 @@ $frontendSubnet = Get-AzVirtualNetworkSubnetConfig -Name $FrontendSubnetName -Vi
 
 # Set-AzVirtualNetworkSubnetConfig updates the subnet's NSG assignment in memory
 # This does not apply to Azure yet, requires Set-AzVirtualNetwork to commit
+# In Terraform, this whole "edit-in-memory then commit" two-step is replaced by
+# a single association resource; Terraform applies it and auto-orders it via
+# its references to the subnet and NSG ids.
 Set-AzVirtualNetworkSubnetConfig `
     -Name $FrontendSubnetName `
     -VirtualNetwork $vnet `
