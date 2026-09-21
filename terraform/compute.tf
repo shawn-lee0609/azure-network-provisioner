@@ -58,3 +58,52 @@ resource "azurerm_linux_virtual_machine" "backend" {
   custom_data = base64encode(file("${path.module}/cloud-init-backend.yaml"))
 }
 
+# ------ Frontend (Nginx / Unity WebGL) VM ------
+
+resource "azurerm_public_ip" "frontend" {
+  name                = "pip-frontend-${var.environment}"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
+
+resource "azurerm_network_interface" "frontend" {
+  name                = "nic-frontend-${var.environment}"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = azurerm_subnet.frontend.id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.frontend.id
+  }
+}
+
+resource "azurerm_linux_virtual_machine" "frontend" {
+  name                  = "vm-frontend-${var.environment}"
+  location              = azurerm_resource_group.main.location
+  resource_group_name   = azurerm_resource_group.main.name
+  size                  = "Standard_B2ls_v2"
+  admin_username        = "azureuser"
+  network_interface_ids = [azurerm_network_interface.frontend.id]
+
+  admin_ssh_key {
+    username   = "azureuser"
+    public_key = file("~/.ssh/azure-vm-key.pub")
+  }
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "ubuntu-24_04-lts"
+    sku       = "server"
+    version   = "latest"
+  }
+}
+
