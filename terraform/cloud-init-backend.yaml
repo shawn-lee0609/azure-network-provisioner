@@ -1,0 +1,104 @@
+#cloud-config
+
+# cloud-init: Backend (Bomberman SignalR game server) provisioning
+
+# Purpose: replaces the manual, SSH-based Deploy-App.ps1. Instead of connecting
+# from a workstation and running remote commands, this script is handed to the
+# VM via `custom_data`; cloud-init executes it ONCE on the VM's first boot, from
+# inside the machine. That removes the outbound SSH deploy step entirely.
+#
+# Note on privileges: every command here runs as ROOT, so no `sudo` is needed.
+# Because root owns whatever it creates, ownership is handed back (chown) to azureuser
+# at the end (the systemd service runs as User=azureuser).
+
+# Refresh the apt (advanced package tool) package index once before installing anything 
+# (equals the "sudo apt-get update -y" step in Deploy-App.ps1).
+package_update: true
+
+# Install base tools the deploy relies on. The original PowerShell script
+# assumed git/wget already existed on the VM; a minimal Ubuntu image may not
+# ship them, so we install them explicitly to make the boot self-sufficient.
+# git for repo clone and wget for .NET 
+packages:
+  - git
+  - wget
+
+# write_files runs BEFORE runcmd, so the systemd unit (instruction) is on disk and ready to
+# be anabled once the app has been built further below.
+write_files:
+  # systemd unit that keeps the game server running and restarts it on crash.
+  # Unit is the "instruction" for the systemd to admin the server
+  # Mirrors the $serviceDefinition block built in Deploy-App.ps1 step 8.
+  - path: /etc/systemd/system/bomberman.service
+    permissions: '0644'
+    content: |
+      [Unit] 
+      Description = Bomberman SignalR Game Server
+      # Don't start until the network stack is up (the server binds a port).
+      After = network.target 
+
+      [Service]
+      # Run from the published output directory produced by `dotnet publish`.
+      # The folder where the server starts, where the dotnet publish results gets saved
+      WorkingDirectory = /home/azureuser/bomberman-server/BombermanServer/publish
+      
+      # Launch the compiled server DLL with the system-wide dotnet runtime.
+      # The main line of code where it turns on the game server
+      ExecStart = /usr/bin/dotnet /home/azureuser/bomberman-server/BombermanServer/publish/BombermanServer.dll
+
+      # Auto-restart if the server dies (after 10 seconds) so that it revives even if server crashes
+      Restart = always
+      RestartSec = 10
+
+      # Run as the normal admin user, not root, for least privilege.
+      User = azureuser 
+
+      # Bind Kestrel to port 5000 on all interfaces so external clients can
+      # reach it. This is the port the backend NSG allows from the frontend
+      # subnet. 0.0.0.0 is what makes it reachable off-box.
+      Environment = ASPNETCORE_URLS=http://0.0.0.0:5000
+      Environment = ASPNETCORE_ENVIRONMENT=Production
+
+      [Install]
+      # Install is the action when "systemctl enable"
+      # Start automatically at boot process, in the standard multi-user runlevel.
+      WantedBy = multi-user.target
+
+# runcmd runs each entry in order, as root, after packages/write_files are done.
+# This is the heart of the deploy, the same sequence Deploy-App.ps1 issued over
+# SSH, now executed locally on the VM.
+runcmd:
+  # 1. Install the .NET 10 SDK (Deploy-App.ps1 step 5)
+  # becomes installable via apt. The .deb only adds the repo definition.
+  - wget https://packages.microsoft.com/config/ubuntu/24.04/packages-microsoft-prod.deb -O /tmp/packages-microsoft-prod.deb
+  - dpkg -i /tmp/packages-microsoft-prod.deb
+  - rm /tmp/packages-microsoft-prod.deb
+  # Re-index apt now that the Microsoft repo is registered, then install the SDK.
+  - apt-get update -y
+  - apt-get install -y dotnet-sdk-10.0
+
+  # 2. Clone the Repo (Deploy-App.ps1 step 6)
+  # Fresh clone into azureuser's home. On first boot the directory never
+  # exists yet, so no "pull vs clone" branching is needed.
+  - git clone https://github.com/shawn-lee0609/BombermanServer.git /home/azureuser/bomberman-server
+
+  # 3. Build & publish (Deploy-App.ps1 step 7)
+  # The .csproj lives in the BombermanServer/ subfolder; publish a Release
+  # build into ./publish, which the systemd unit above points ExecStart at.
+  - cd /home/azureuser/bomberman-server/BombermanServer && dotnet publish -c Release -o /home/azureuser/bomberman-server/BombermanServer/publish
+
+  # 4. Fix ownership
+  # root created everything above; hand the whole tree to azureuser so the
+  # service (User=azureuser) can read and execute its own files.
+  - chown -R azureuser:azureuser /home/azureuser/bomberman-server
+
+  # 5. Register & launch the service (Deploy-App.ps1 step 8)
+  # Pick up the unit written by write_files, enable it for boot, start it now.
+  # daemon-reload: let systemd to read the Unit file above which is made by write_files
+  # enable bomberman: when it boots (reboots) it automatically starts (Unit's ExecStart cmd))
+  # start bomberman: Start it right now (Unit's ExecStart cmd)
+  - systemctl daemon-reload
+  - systemctl enable bomberman
+  - systemctl start bomberman
+
+
