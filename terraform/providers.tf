@@ -7,7 +7,7 @@ terraform {
     # To communicate with Azure, require azurerm provider
     azurerm = {
       source  = "hashicorp/azurerm" # Where to get it
-      version = "~> 5.0"            # Which version (allow 5.x, block 6.0)
+      version = "4.42.0"          
     }
   }
 }

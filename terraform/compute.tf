@@ -30,7 +30,7 @@ resource "azurerm_linux_virtual_machine" "backend" {
   name                = "vm-backend-${var.environment}"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
-  size                = "Standard_B2ls_v2"
+  size                = "Standard_D2s_v7"
   admin_username      = "azureuser" # Admin account name: Use when to connect in SSH (ssh azureuser@<IP>)
   # The above created NIC card gets attached to the VM
   # The reason why it is written with [ ], is because one VM can have multiple NICs (list)
@@ -38,7 +38,7 @@ resource "azurerm_linux_virtual_machine" "backend" {
 
   admin_ssh_key {
     username   = "azureuser"
-    public_key = file("~/.ssh/azure-vm-key.pub")
+    public_key = file("~/.ssh/azure-vm-key-nopass.pub")
   }
 
   os_disk {
@@ -85,13 +85,13 @@ resource "azurerm_linux_virtual_machine" "frontend" {
   name                  = "vm-frontend-${var.environment}"
   location              = azurerm_resource_group.main.location
   resource_group_name   = azurerm_resource_group.main.name
-  size                  = "Standard_B2ls_v2"
+  size                  = "Standard_D2s_v7"
   admin_username        = "azureuser"
   network_interface_ids = [azurerm_network_interface.frontend.id]
 
   admin_ssh_key {
     username   = "azureuser"
-    public_key = file("~/.ssh/azure-vm-key.pub")
+    public_key = file("~/.ssh/azure-vm-key-nopass.pub")
   }
 
   os_disk {

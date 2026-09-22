@@ -70,6 +70,18 @@ resource "azurerm_network_security_group" "backend" {
     source_address_prefix      = "10.0.1.0/24"
     destination_address_prefix = "*"
   }
+
+  security_rule {
+    name                       = "Allow-SSH-Temp"
+    priority                   = 200
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "154.20.6.156"   
+    destination_address_prefix = "*"
+  }
 }
 
 resource "azurerm_subnet_network_security_group_association" "backend" {

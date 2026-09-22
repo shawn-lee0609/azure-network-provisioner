@@ -7,7 +7,7 @@ variable "environment" {
 
 variable "location" {
   type    = string
-  default = "canadacentral"
+  default = "eastus" 
 }
 
 variable "subscription_id" {
