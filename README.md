@@ -1,6 +1,6 @@
 # Azure Network Provisioner & Validator
 
-A portfolio project demonstrating end-to-end Azure network infrastructure automation — originally built with **PowerShell** and later re-implemented as **declarative Terraform (IaC)** — culminating in a live multiplayer Bomberman game deployed across a two-VM architecture with HTTPS and WebSocket communication.
+A portfolio project demonstrating end-to-end Azure network infrastructure automation. Originally built with **PowerShell** and later re-implemented as **declarative Terraform (IaC)**, culminating in a live multiplayer Bomberman game deployed across a two-VM architecture with HTTPS and WebSocket communication.
 
 **Live Demo:** https://bomberman-slee.canadacentral.cloudapp.azure.com
 (Might not work as Azure Student Account gets expired)
@@ -58,7 +58,7 @@ The infrastructure was put to use by deploying a real-time multiplayer Bomberman
               └────────────────────────┘
 ```
 
-The entire topology above is defined as code — first in PowerShell, now in Terraform — and the backend application layer is provisioned automatically on VM first boot via cloud-init.
+The entire topology above is defined as code, first in PowerShell, now in Terraform, and the backend application layer is provisioned automatically on VM first boot via cloud-init.
 
 **Request flow:**
 1. Browser loads `https://bomberman-slee.canadacentral.cloudapp.azure.com` → Nginx serves Unity WebGL build (HTML/JS/WASM)
@@ -97,7 +97,7 @@ Environment (`dev` / `staging` / `prod`), region, and subscription are `variable
 
 ### Automated app deployment with cloud-init
 
-The manual, SSH-based `Deploy-App.ps1` was replaced by a cloud-init script passed to the backend VM via `custom_data`. On the VM's first boot it runs entirely on-box — no outbound SSH — and:
+The manual, SSH-based `Deploy-App.ps1` was replaced by a cloud-init script passed to the backend VM via `custom_data`. On the VM's first boot it runs entirely on-box, no outbound SSH, and:
 
 1. Installs the **.NET 10 SDK** (Microsoft apt repository)
 2. Clones the **BombermanServer** repository
@@ -108,14 +108,14 @@ The result: `terraform apply` alone brings up the network, the VMs, and a runnin
 
 ### Provider version pinning
 
-The `azurerm` provider is version-pinned in `providers.tf` and `.terraform.lock.hcl` is committed, so every machine uses the same provider version. This was a deliberate response to a regression encountered on an unpinned upgrade — pinning guarantees reproducible plans.
+The `azurerm` provider is version-pinned in `providers.tf` and `.terraform.lock.hcl` is committed, so every machine uses the same provider version. This was a deliberate response to a regression encountered on an unpinned upgrade, pinning guarantees reproducible plans.
 
 ### Migration status
 
-- ✅ Network layer (VNet, subnets, NSGs, route table) — fully IaC
-- ✅ Compute (Public IPs, NICs, both VMs, SSH keys) — fully IaC
-- ✅ Backend application (.NET runtime, build, systemd service) — automated via cloud-init
-- 🔲 Frontend application layer (Nginx, WebGL static files, Let's Encrypt HTTPS, reverse proxy) — provisioned as a bare VM today; cloud-init automation of this layer is the next step (it was configured manually in the original deployment)
+- ✅ Network layer (VNet, subnets, NSGs, route table): fully IaC
+- ✅ Compute (Public IPs, NICs, both VMs, SSH keys): fully IaC
+- ✅ Backend application (.NET runtime, build, systemd service): automated via cloud-init
+- 🔲 Frontend application layer (Nginx, WebGL static files, Let's Encrypt HTTPS, reverse proxy): provisioned as a bare VM today; cloud-init automation of this layer is the next step (it was configured manually in the original deployment)
 
 ---
 
@@ -332,7 +332,7 @@ The Bomberman game uses an `INetworkComm` interface that abstracts the transport
 | `SignalRComm` | SignalR / WebSocket | Desktop builds over WAN |
 | `SignalRCommWebGL` | SignalR via JS bridge | WebGL browser builds |
 
-Switching between transports requires changing a single line in `GameController.cs` — the game logic is completely decoupled from the networking layer through polymorphism. The WebGL implementation required a JavaScript bridge (`.jslib`) because Unity's WebGL build runs in a browser sandbox where raw C# `HubConnection` is not available; instead, the SignalR JavaScript client library is loaded from CDN and communicates with the C# game logic via Unity's `SendMessage` interop.
+Switching between transports requires changing a single line in `GameController.cs`, the game logic is completely decoupled from the networking layer through polymorphism. The WebGL implementation required a JavaScript bridge (`.jslib`) because Unity's WebGL build runs in a browser sandbox where raw C# `HubConnection` is not available; instead, the SignalR JavaScript client library is loaded from CDN and communicates with the C# game logic via Unity's `SendMessage` interop.
 
 ---
 
