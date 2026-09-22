@@ -13,7 +13,7 @@ A portfolio project demonstrating end-to-end Azure network infrastructure automa
 
 This project automates the deployment and validation of Azure network infrastructure across multiple environments (dev / staging / prod). It provisions a segmented Virtual Network with security controls, validates the deployed state against a desired configuration, and generates an HTML drift detection report.
 
-The provisioning layer exists in **two implementations**: an original **imperative PowerShell** version (Az module) and a **declarative Terraform** re-implementation (azurerm provider). The Terraform migration models the network and compute as version-controlled infrastructure-as-code, and automates in-VM application setup with **cloud-init** — so a single `terraform apply` provisions the infrastructure *and* deploys the running game server.
+The provisioning layer exists in **two implementations**: an original **imperative PowerShell** version (Az module) and a **declarative Terraform** re-implementation (azurerm provider). The Terraform migration models the network and compute as version-controlled infrastructure-as-code, and automates in-VM application setup with **cloud-init**, so a single `terraform apply` provisions the infrastructure *and* deploys the running game server.
 
 The infrastructure was put to use by deploying a real-time multiplayer Bomberman game: an ASP.NET Core SignalR server on the Backend VM, and a Unity WebGL client served via Nginx on the Frontend VM which is secured with HTTPS (Let's Encrypt) and connected through a reverse proxy.
 
