@@ -1,6 +1,6 @@
 # Azure Network Provisioner & Validator
 
-A portfolio project demonstrating end-to-end Azure network infrastructure automation using PowerShell, Python, and GitHub Actions CI/CD, culminating in a live multiplayer Bomberman game deployed across a two-VM architecture with HTTPS and WebSocket communication.
+A portfolio project demonstrating end-to-end Azure network infrastructure automation — originally built with **PowerShell** and later re-implemented as **declarative Terraform (IaC)** — culminating in a live multiplayer Bomberman game deployed across a two-VM architecture with HTTPS and WebSocket communication.
 
 **Live Demo:** https://bomberman-slee.canadacentral.cloudapp.azure.com
 (Might not work as Azure Student Account gets expired)
@@ -12,6 +12,8 @@ A portfolio project demonstrating end-to-end Azure network infrastructure automa
 ## Overview
 
 This project automates the deployment and validation of Azure network infrastructure across multiple environments (dev / staging / prod). It provisions a segmented Virtual Network with security controls, validates the deployed state against a desired configuration, and generates an HTML drift detection report.
+
+The provisioning layer exists in **two implementations**: an original **imperative PowerShell** version (Az module) and a **declarative Terraform** re-implementation (azurerm provider). The Terraform migration models the network and compute as version-controlled infrastructure-as-code, and automates in-VM application setup with **cloud-init** — so a single `terraform apply` provisions the infrastructure *and* deploys the running game server.
 
 The infrastructure was put to use by deploying a real-time multiplayer Bomberman game: an ASP.NET Core SignalR server on the Backend VM, and a Unity WebGL client served via Nginx on the Frontend VM which is secured with HTTPS (Let's Encrypt) and connected through a reverse proxy.
 
@@ -56,6 +58,8 @@ The infrastructure was put to use by deploying a real-time multiplayer Bomberman
               └────────────────────────┘
 ```
 
+The entire topology above is defined as code — first in PowerShell, now in Terraform — and the backend application layer is provisioned automatically on VM first boot via cloud-init.
+
 **Request flow:**
 1. Browser loads `https://bomberman-slee.canadacentral.cloudapp.azure.com` → Nginx serves Unity WebGL build (HTML/JS/WASM)
 2. WebGL client opens `wss://bomberman-slee.../gamehub` → Nginx TLS-terminates and proxies to `http://vm-backend:5000/gamehub`
@@ -63,15 +67,77 @@ The infrastructure was put to use by deploying a real-time multiplayer Bomberman
 
 ---
 
+## Infrastructure as Code: PowerShell → Terraform
+
+The provisioning layer was first written in imperative PowerShell, then re-implemented in declarative Terraform. Both live in the repo so the evolution is visible in the commit history.
+
+### Why migrate
+
+| | PowerShell (Az module) | Terraform (azurerm) |
+|---|---|---|
+| Paradigm | Imperative — scripted create/check steps | Declarative — desired end state |
+| Idempotency | Hand-coded `Get-Az*` existence checks | State-tracked automatically |
+| Ordering | Managed manually in script order | Derived from a dependency graph |
+| Preview | None (run to find out) | `terraform plan` dry-run |
+| App deploy | Manual SSH (`Deploy-App.ps1`) | cloud-init on first boot |
+| Run | Multiple scripts, in sequence | Single `terraform apply` |
+
+### What Terraform models
+
+Every resource the PowerShell scripts created is expressed as an `azurerm` resource, split by layer for readability (Terraform merges all `.tf` files and resolves ordering from references):
+
+- **network.tf** — Resource Group, VNet (`10.0.0.0/16`), frontend/backend subnets
+- **nsg.tf** — Frontend NSG (Allow 80/443 from Internet) and Backend NSG (Allow 5000 from the frontend subnet only), each associated to its subnet
+- **route_table.tf** — Custom route table (`0.0.0.0/0 → Internet`) associated to the backend subnet
+- **compute.tf** — Public IPs, NICs, and Linux VMs for backend and frontend, using SSH key-only authentication (no password in source)
+- **cloud-init-backend.yaml** — first-boot provisioning script (see below)
+- **outputs.tf** — exports the backend/frontend public IPs
+
+Environment (`dev` / `staging` / `prod`), region, and subscription are `variables`, so the same code deploys to any environment or region by changing a value — not the code.
+
+### Automated app deployment with cloud-init
+
+The manual, SSH-based `Deploy-App.ps1` was replaced by a cloud-init script passed to the backend VM via `custom_data`. On the VM's first boot it runs entirely on-box — no outbound SSH — and:
+
+1. Installs the **.NET 10 SDK** (Microsoft apt repository)
+2. Clones the **BombermanServer** repository
+3. Runs `dotnet publish -c Release`
+4. Registers the server as a **systemd service** (`Restart=always`, enabled at boot), bound to `0.0.0.0:5000`
+
+The result: `terraform apply` alone brings up the network, the VMs, and a running game server registered under systemd, surviving crashes and reboots.
+
+### Provider version pinning
+
+The `azurerm` provider is version-pinned in `providers.tf` and `.terraform.lock.hcl` is committed, so every machine uses the same provider version. This was a deliberate response to a regression encountered on an unpinned upgrade — pinning guarantees reproducible plans.
+
+### Migration status
+
+- ✅ Network layer (VNet, subnets, NSGs, route table) — fully IaC
+- ✅ Compute (Public IPs, NICs, both VMs, SSH keys) — fully IaC
+- ✅ Backend application (.NET runtime, build, systemd service) — automated via cloud-init
+- 🔲 Frontend application layer (Nginx, WebGL static files, Let's Encrypt HTTPS, reverse proxy) — provisioned as a bare VM today; cloud-init automation of this layer is the next step (it was configured manually in the original deployment)
+
+---
+
 ## Project Structure
 
 ```
 azure-network-provisioner/
-├── deploy/
+├── terraform/                   # Declarative IaC (azurerm) — current
+│   ├── providers.tf             # Provider config + version pinning
+│   ├── variables.tf             # environment, location, subscription_id
+│   ├── terraform.tfvars         # Variable values (gitignored — subscription_id)
+│   ├── network.tf               # Resource Group, VNet, subnets
+│   ├── nsg.tf                   # NSGs, rules, subnet associations
+│   ├── route_table.tf           # Route table + backend association
+│   ├── compute.tf               # Public IPs, NICs, Linux VMs
+│   ├── cloud-init-backend.yaml  # First-boot app provisioning (replaces Deploy-App.ps1)
+│   └── outputs.tf               # Public IP outputs
+├── deploy/                      # Imperative PowerShell (Az module) — original
 │   ├── Deploy-Network.ps1       # VNet and Subnet provisioning
 │   ├── Deploy-NSG.ps1           # NSG rules and subnet association
 │   ├── Deploy-RouteTable.ps1    # Route Table with default internet route
-|   |__ Deploy-FrontendVM.ps1    # Azure VM provisioning (Frontend - Game Client)
+│   ├── Deploy-FrontendVM.ps1    # Azure VM provisioning (Frontend - Game Client)
 │   ├── Deploy-VM.ps1            # Azure VM provisioning (Backend - Game Server)
 │   ├── Deploy-App.ps1           # Bomberman server deployment
 │   └── Deploy-All.ps1           # Master orchestration script
@@ -96,7 +162,9 @@ azure-network-provisioner/
 
 | Category | Technology | Purpose |
 |----------|-----------|---------|
-| Infrastructure as Code | PowerShell (Az module) | Deploy Azure resources |
+| Infrastructure as Code | Terraform (azurerm) | Declarative resource provisioning (current) |
+| Infrastructure as Code | PowerShell (Az module) | Imperative resource provisioning (original) |
+| Config Management | cloud-init | Automated first-boot app deployment (backend) |
 | Validation | Python 3.x (azure-mgmt-network) | Drift detection and reporting |
 | CI/CD | GitHub Actions | Automated lint, test, deploy |
 | Cloud Platform | Microsoft Azure | VNet, Subnet, NSG, Route Table, VM |
@@ -112,33 +180,49 @@ azure-network-provisioner/
 
 ### Prerequisites
 
-- PowerShell 7.x
+- Terraform >= 1.5
+- Azure CLI (for Terraform authentication)
+- PowerShell 7.x + Az module (for the original scripts)
 - Python 3.11+
-- Azure CLI
-- Az PowerShell module
 - Active Azure subscription
 
 ### Installation
 
-```powershell
+```bash
 # Clone the repository
 git clone https://github.com/shawn-lee0609/azure-network-provisioner.git
 cd azure-network-provisioner
 
-# Install Python dependencies
+# Install Python dependencies (for the validator)
 pip install -r validate/requirements.txt
-
-# Install Az PowerShell module
-Install-Module -Name Az -Scope CurrentUser -Force
 ```
 
-### Deploy Infrastructure
+### Deploy Infrastructure — Terraform (current)
+
+```bash
+# Authenticate (Terraform uses the Azure CLI login)
+az login
+az account set --subscription "<your-subscription-id>"
+
+cd terraform
+
+# Provide the subscription id (terraform.tfvars is gitignored)
+echo 'subscription_id = "<your-subscription-id>"' > terraform.tfvars
+
+terraform init
+terraform plan        # preview
+terraform apply       # provision network + VMs + backend app (cloud-init)
+
+# Public IPs are printed as outputs; tear down with:
+terraform destroy
+```
+
+> New Azure subscriptions may need a VM family quota increase and a region/size with available capacity. Region and VM size are set via `var.location` and the `size` argument in `compute.tf`.
+
+### Deploy Infrastructure — PowerShell (original)
 
 ```powershell
-# Login to Azure
 Connect-AzAccount
-
-# Deploy all network resources to dev environment
 .\deploy\Deploy-All.ps1 -Environment dev
 ```
 
@@ -218,7 +302,7 @@ The final phase deployed a real-time multiplayer Bomberman game across the provi
 
 ### Game Server (Backend VM)
 
-An ASP.NET Core SignalR hub runs on `vm-backend-dev` within `snet-backend`, listening on port 5000. The hub manages game state: player joins, host assignment, movement, bomb placement, explosions, deaths, and game-over conditions. All communication is broadcast via WebSocket to connected clients.
+An ASP.NET Core SignalR hub runs on `vm-backend-dev` within `snet-backend`, listening on port 5000. The hub manages game state: player joins, host assignment, movement, bomb placement, explosions, deaths, and game-over conditions. All communication is broadcast via WebSocket to connected clients. In the Terraform deployment, the entire server setup (runtime install, build, systemd service) is provisioned automatically by cloud-init on first boot.
 
 ### Game Client (Frontend VM)
 
